@@ -1,4 +1,6 @@
 from asyncio.windows_events import NULL
+from email import message
+from msvcrt import open_osfhandle
 import re
 import configparser
 from fileinput import close
@@ -14,30 +16,71 @@ import os
 import random
 import ast
 from datetime import date
-from nonebot.plugin import on_keyword, on_startswith, on_endswith, on_regex, on_message,on_notice
+from nonebot.plugin import on_keyword, on_startswith, on_endswith, on_regex, on_message,on_notice,on_request,on_metaevent,on_command
 from nonebot.adapters.onebot.v11 import Bot, Event
-from nonebot.adapters.onebot.v11 import Message, MessageSegment
+from nonebot.adapters.onebot.v11 import Message, MessageSegment, GroupMessageEvent,MessageEvent,MetaEvent,RequestEvent,NotifyEvent,NoticeEvent,GroupRequestEvent,GroupDecreaseNoticeEvent,GroupIncreaseNoticeEvent,GroupAdminNoticeEvent,GroupBanNoticeEvent,GroupRecallNoticeEvent,GroupUploadNoticeEvent,LuckyKingNotifyEvent,FriendRecallNoticeEvent,FriendAddNoticeEvent,PrivateMessageEvent,LifecycleMetaEvent,FriendRequestEvent,PokeNotifyEvent,HonorNotifyEvent,HeartbeatMetaEvent
+
 from nonebot import on_message
 from httpx import AsyncClient
-from nonebot.params import EventType
+from nonebot.params import EventType , EventMessage,EventToMe,EventPlainText, EventParam
+
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from nonebot import get_bot
+import requests
 
 
-
-global_config = get_driver().config
-config = Config.parse_obj(global_config)
-plugin_config = Config.parse_obj(get_driver().config)
-
-# proDir = os.path.split(os.path.realpath(__file__))[0]
-# # proDir = os.path.dirname(os.path.realpath(__file__))  与上面一行代码作用一样
-# configPath = os.path.join(proDir, "WordDB.txt")
-# path = os.path.abspath(configPath)
+import datetime
+ 
+# 获取今天（现在时间）
+today = datetime.date.today()
+print(today)
+ 
 
 
+from nonebot import require
+scheduler = require("nonebot_plugin_apscheduler").scheduler
 
 
+botDir=os.path.abspath('.')
+print(botDir)
+url="https://www.bilibili.com/"
+chrome_path=botDir+"\\MyPluginData\\chromedriver_win32\\chromedriver.exe"
+screenshot_path=botDir+"\\MyPluginData\\timeline.png"
+
+def urlShotter(url):
+    global chrome_path
+    global screenshot_path
+    URL = url
+    # 用selenium打开网页
+    # 首先要下载 Chrome webdriver
+
+    ch_options = Options()
+    ch_options.add_argument("--kiosk")
+    ch_options.add_argument('window-size=1920x1080')
+    ch_options.add_argument('--disable-gpu')
+    ch_options.add_argument('--hide-scrollbars')
+    ch_options.add_argument("--disable-blink-features=AutomationControlled")
+    ch_options.add_argument('--headless') 
+    # 在启动浏览器时加入配置
+    driver = webdriver.Chrome(executable_path=chrome_path, chrome_options=ch_options)
+    driver.get(URL)
+    print(driver.page_source)
+    time.sleep(2)
+    driver.save_screenshot(screenshot_path)
 
 
-
+def GetDateMessage():
+    global currentMsg
+    url = "http://timor.tech/api/holiday/next"
+    res = requests.get(url).json()
+    res = res['holiday']
+    nameOfHoliday=res['name']
+    dateOfHoliday=res['date']
+    daysBeforeHoliday=res['rest']
+    thisMsg=f'今天是{today}\n最近的假期是{dateOfHoliday}的{nameOfHoliday}\n距离{nameOfHoliday}还有{daysBeforeHoliday}天！'
+    return thisMsg
 
 
 #封装测试
@@ -46,7 +89,7 @@ def cqAt(qqId):
     return cqAtCode
 
 def cqImg(imgPath):
-    thisImgMsg=MessageSegment.image(f'file:///{imgPath}')
+    thisImgMsg=f'[CQ:image,file=file:///{imgPath},type=show,id=40004]'#MessageSegment.image(f'[CQ:image,file=file:///{imgPath},type=show,id=40004]')
     return thisImgMsg
 
 def RandomFileGet(firstdir):
@@ -71,33 +114,34 @@ from nonebot.adapters import Message
 from nonebot.params import Arg, CommandArg, ArgPlainText
 
 
-weather = on_command("weather", rule=to_me(), aliases={"天气", "天气预报"}, priority=5)
+getUrlScreenshot = on_startswith(['查看截图'],priority=50)# 创建消息关键词匹配事件响应器
+@getUrlScreenshot.handle()
+async def getUrlScreenshot_handle(bot: Bot, event: Event):#异步定义
+    global screenshot_path
+    #thisGroupId = event.get_session_id().split("_")[1]     
+    urlShotter(url)
+    time.sleep(3)
+    await getUrlScreenshot.finish(MessageSegment.image(f'file:///{screenshot_path}'))
+    #await getUrlScreenshot.finish(Message(f'[CQ:image,file={screenshot_path}]'))
+
+getSixtySec = on_startswith(['今日新闻'],priority=50)# 创建消息关键词匹配事件响应器
+@getSixtySec.handle()
+async def getSixtySec_handle(bot: Bot, event: Event):#异步定义
+    global screenshot_path
+    await getSixtySec.finish(MessageSegment.image(f'https://api.03c3.cn/zb/'))
 
 
 
 
-@weather.handle()
-async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
-    plain_text = args.extract_plain_text()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
-    if plain_text:
-        matcher.set_arg("city", args)  # 如果用户发送了参数 直接赋值
+@scheduler.scheduled_job('cron', hour=8,minute=00)
+async def sendMySixtySec():
+    bot = get_bot('2546707335')
+    global screenshot_path
+    #result =  bot.send_private_msg(user_id=623985209,message=MessageSegment.image(f'https://api.03c3.cn/zb/'))
+    await bot.send_private_msg(user_id=623985209,message=GetDateMessage())
+    await bot.send_private_msg(user_id=623985209,message=MessageSegment.image(f'https://api.03c3.cn/zb/'))
 
 
-
-
-@weather.got("city", prompt="你想查询哪个城市的天气呢？")
-async def handle_city(city: Message = Arg(), city_name: str = ArgPlainText("city")):
-    if city_name not in ["北京", "上海"]:  # 如果参数不符合要求，则提示用户重新输入
-        # 可以使用平台的 Message 类直接构造模板消息
-        await weather.reject(city.template("你想查询的城市 {city} 暂不支持，请重新输入！"))
-
-
-    city_weather = await get_weather(city_name)
-    await weather.finish(city_weather)
-
-
-
-
-# 在这里编写获取天气信息的函数
-async def get_weather(city: str) -> str:
-    return f"{city}的天气是..."
+#scheduler.add_job(run_every_day_from_program_start, "interval", days=1, id="xxx")
+job = scheduler.add_job(sendMySixtySec, 'interval', days=1)
+#job.remove()

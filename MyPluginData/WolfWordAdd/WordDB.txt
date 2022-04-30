@@ -1,0 +1,10 @@
+[966154614]
+test = &Nex&🍞&Nex&[CQ:face,id=298]&Nex&[CQ:image,file=c7a3acf636591c8fc71c15a72436a7b0.image,url=https://gchat.qpic.cn/gchatpic_new/623985209/966154614-2237634819-C7A3ACF636591C8FC71C15A72436A7B0/0?term=3,subType=0]
+表情 = &Nex&[CQ:face,id=317]
+表情1 = &Nex&[CQ:face,id=311]
+	123      = &Nex&123
+$blank;$blank;$blank;$blank;$blank;123$blank;$blank;$blank;$blank;$blank; = &Nex&123
+$blank;$blank;$blank;？ = &Nex&   ？
+$blank;$blank;$blank;$blank;$blank;1 = &Nex&     2
+$blank; = &Nex&&Nex&2
+

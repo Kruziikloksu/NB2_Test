@@ -201,27 +201,27 @@ async def imgAddText_handle(bot: Bot, event: Event):#异步定义
     await imgAddText.finish(MessageSegment.image(f'file:///{imgPath}'))
 
 
-def fightingCreate():
-    # 初始化图片地址文件夹途径
-    image_path ="C:\\Users\\Scedovah\\Desktop\\gif1"
-    # 获取文件列表
-    files = os.listdir(image_path)
-    # 定义第一个文件的全局路径
-    file_first_path = os.path.join(image_path, files[0])
-    # 获取Image对象
-    img = Image.open(file_first_path)#.resize((520,520),Image.ANTIALIAS)
-    #imgHead1 = Image.open('C:\\Users\\Scedovah\\Desktop\\Heads\\lje.png')
-    #img.paste(imgHead1,(150,50),imgHead1)
-    # 初始化文件对象数组
-    images = []
-    for image in files[1:]:
-        # 获取当前图片全量路径
-        img_path = os.path.join(image_path, image)
-        # 将当前图片使用Image对象打开、然后加入到images数组
-        curImg=Image.open(img_path)
-        #curImg.paste(imgHead1,(150,50),imgHead1)
-        images.append(curImg)
-    # 保存并生成gif动图
-    img.save('C:\\Users\\Scedovah\\Desktop\\testGIF.gif', save_all=True, append_images=images, loop=0, duration=165)
+# def fightingCreate():
+#     # 初始化图片地址文件夹途径
+#     image_path ="C:\\Users\\Scedovah\\Desktop\\gif1"
+#     # 获取文件列表
+#     files = os.listdir(image_path)
+#     # 定义第一个文件的全局路径
+#     file_first_path = os.path.join(image_path, files[0])
+#     # 获取Image对象
+#     img = Image.open(file_first_path)#.resize((520,520),Image.ANTIALIAS)
+#     #imgHead1 = Image.open('C:\\Users\\Scedovah\\Desktop\\Heads\\lje.png')
+#     #img.paste(imgHead1,(150,50),imgHead1)
+#     # 初始化文件对象数组
+#     images = []
+#     for image in files[1:]:
+#         # 获取当前图片全量路径
+#         img_path = os.path.join(image_path, image)
+#         # 将当前图片使用Image对象打开、然后加入到images数组
+#         curImg=Image.open(img_path)
+#         #curImg.paste(imgHead1,(150,50),imgHead1)
+#         images.append(curImg)
+#     # 保存并生成gif动图
+#     img.save('C:\\Users\\Scedovah\\Desktop\\testGIF.gif', save_all=True, append_images=images, loop=0, duration=165)
 
-fightingCreate()
+# fightingCreate()

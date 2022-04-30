@@ -20,6 +20,11 @@ app = nonebot.get_asgi()
 driver = nonebot.get_driver()
 driver.register_adapter(ONEBOT_V11Adapter)
 
+nonebot.init(apscheduler_autostart=True)
+nonebot.init(apscheduler_config={
+    "apscheduler.timezone": "Asia/Shanghai"
+})
+
 nonebot.load_builtin_plugins("echo")
 
 # Please DO NOT modify this file unless you know what you are doing!
@@ -31,9 +36,9 @@ nonebot.load_from_toml("pyproject.toml")
 nonebot.load_plugin("MyPlugin.wolfHowl")
 nonebot.load_plugin("MyPlugin.wordAdd")
 nonebot.load_plugin("MyPlugin.groupControl")
-nonebot.load_plugin("MyPlugin.imageCreate")
-#nonebot.load_plugin("MyPlugin.aboutRequest")
-#nonebot.load_plugin("MyPlugin.textMineSwp")
+#nonebot.load_plugin("MyPlugin.imageCreate")
+nonebot.load_plugin("MyPlugin.aboutRequest")
+nonebot.load_plugin("MyPlugin.createCharImage")
 # Modify some config / config depends on loaded configs
 # 
 # config = driver.config

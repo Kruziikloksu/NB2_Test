@@ -32,7 +32,18 @@ plugin_config = Config.parse_obj(get_driver().config)
 # # proDir = os.path.dirname(os.path.realpath(__file__))  与上面一行代码作用一样
 # configPath = os.path.join(proDir, "WordDB.txt")
 # path = os.path.abspath(configPath)
-ini_absolute_path = 'C:/Users/Scedovah/Desktop/WDB/WordDB.txt'
+ini_absolute_path = "./MyPluginData/WolfWordAdd/WordDB.txt"#'C:\\Users\\Scedovah\\Desktop\\WDB\\WordDB.txt'
+dim_absolute_path = "./MyPluginData/WolfWordAdd/WordDim.txt"#'C:\\Users\\Scedovah\\Desktop\\WDB\\WordDim.txt'
+
+def ReturnStrList(thisStr):
+    results = []
+    # x + 1 表示子串的长度
+    for x in range(len(thisStr)):
+        # i 表示滑窗长度
+        for i in range(len(thisStr) - x):
+            results.append(thisStr[i:i + x + 1])
+    return results
+
 
 def AddWord(groupId,targetWord,newContent)->str:
     targetWord=str(targetWord).replace('[cq','[CQ')
@@ -44,6 +55,7 @@ def AddWord(groupId,targetWord,newContent)->str:
         o=open(ini_absolute_path, "w",encoding='utf-8') 
         conf.write(o)
         o.close()
+        print('新群号已创建')
     conf.clear
     conf.read(ini_absolute_path,encoding='utf-8')  
     if  conf.has_option(groupId, targetWord) :
@@ -61,31 +73,65 @@ def AddWord(groupId,targetWord,newContent)->str:
     conf.clear
     conf.read(ini_absolute_path,encoding='utf-8')  
     if  not  conf.has_option(groupId, targetWord) :
-        conf.set(groupId,targetWord,newContent)
+        conf.set(groupId,targetWord,f'&Nex&{newContent}')
         thisContent= conf.get(groupId, targetWord)
         o=open(ini_absolute_path, "w",encoding='utf-8') 
         conf.write(o)
         o.close()
-        return f'添加成功！'
+        return f'新词条添加成功！'
+
+def CutWord(groupId,targetWord,newContent)->str:
+    targetWord=str(targetWord).replace('[cq','[CQ')
+    conf = ConfigParser()  # 实例化一个ConfigParser对象
+    conf.read(open(ini_absolute_path,encoding='utf-8'))  #指定encoding='utf-8'
+    conf.add_section(groupId)#添加section
+    if not conf.has_section(groupId) :
+        conf.add_section(groupId)#添加section
+        o=open(ini_absolute_path, "w",encoding='utf-8') 
+        conf.write(o)
+        o.close()
+        print('新群号已创建')
+    conf.clear
+    conf.read(ini_absolute_path,encoding='utf-8')  
+    if  conf.has_option(groupId, targetWord) :
+        wordList=GetWord(groupId,targetWord)
+        if newContent in wordList :
+            conf.read(ini_absolute_path,encoding='utf-8')
+            thisContent= conf.get(groupId, targetWord)
+            thisContent=thisContent.replace(f'&Nex&{newContent}','')
+            conf.set(groupId,targetWord,f'{thisContent}')
+            o=open(ini_absolute_path, "w",encoding='utf-8') 
+            conf.write(o)
+            o.close()
+            return f'删减成功！'
+        else:
+            return '未找到该记录！'
 
 def GetWord(groupId,targetWord)->str:
     conf = ConfigParser()  # 实例化一个ConfigParser对象
     conf.read(ini_absolute_path,encoding='utf-8')  # 指定encoding='utf-8'
-    #targetWord=targetWord.replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace('CQ','cq').replace.replace(':','$mh;')
-
-    # thisContent= conf.get(groupId, targetWord)
-    # contentList=thisContent.replace('&Nex&','\n')
-    # return contentList
-
     if  conf.has_section(groupId) :
             if  conf.has_option(groupId, targetWord) :
                 thisContent= conf.get(groupId, targetWord)
                 contentList=thisContent.replace('&Nex&','\n')
                 return contentList
             else:
-                return f'词条{targetWord}不存在！'
+                return f'词条不存在！'
     else:
-        return f'词条{targetWord}不存在！'
+        return f'词条不存在！'
+
+def GetIsDim(groupId,targetWord)->str:
+    conf = ConfigParser()  # 实例化一个ConfigParser对象
+    conf.read(dim_absolute_path,encoding='utf-8')  # 指定encoding='utf-8'
+    if  conf.has_section(groupId) :
+            if  conf.has_option(groupId, targetWord) :
+                thisContent= conf.get(groupId, targetWord)
+                contentList=thisContent.replace('&Nex&','\n')
+                return str(contentList[0])
+            else:
+                return f'词条不存在！'
+    else:
+        return f'词条不存在！'
 
 def GetRanWord(groupId,targetWord) ->str:
     conf = ConfigParser()  # 需要实例化一个ConfigParser对象
@@ -95,7 +141,11 @@ def GetRanWord(groupId,targetWord) ->str:
             if  conf.has_option(groupId, targetWord) :
                     thisContent= conf.get(groupId, targetWord)
                     contentList=thisContent.split('&Nex&')
-                    return contentList[random.randint(0,len(contentList)-1)]
+                    resReturn=contentList[random.randint(0,len(contentList)-1)]
+                    if resReturn=='':
+                        return GetRanWord(groupId,targetWord)
+                    if not resReturn=='':
+                        return resReturn
     else:
         return
 
@@ -112,6 +162,52 @@ def DelWord(groupId,targetWord)->str:
             return '未找到该词条！'
     return '未找到该词条！'
 
+def GetAllWord(groupId):
+    conf = ConfigParser()  # 实例化一个ConfigParser对象
+    conf.read(ini_absolute_path,encoding='utf-8')  # 指定encoding='utf-8'
+    keys = conf.options(groupId)
+    return keys
+
+def DimWord(groupId,thisStr):
+    keys = GetAllWord(groupId)
+    for myKey in keys:
+        if myKey in thisStr:
+            return GetRanWord(groupId,myKey)
+
+def SetDim(groupId,targetWord,newContent):
+    targetWord=str(targetWord).replace('[cq','[CQ')
+    conf = ConfigParser()  # 实例化一个ConfigParser对象
+    conf.read(open(dim_absolute_path,encoding='utf-8'))  #指定encoding='utf-8'
+    conf.add_section(groupId)#添加section
+    if not conf.has_section(groupId) :
+        conf.add_section(groupId)#添加section
+        o=open(dim_absolute_path, "w",encoding='utf-8') 
+        conf.write(o)
+        o.close()
+    conf.clear
+    conf.read(dim_absolute_path,encoding='utf-8')  
+    if  conf.has_option(groupId, targetWord) :
+        wordList=GetIsDim(groupId,targetWord)
+        if not newContent == wordList :
+            conf.read(dim_absolute_path,encoding='utf-8')
+            thisContent= conf.get(groupId, targetWord)
+            conf.set(groupId,targetWord,f'{newContent}')
+            o=open(dim_absolute_path, "w",encoding='utf-8') 
+            conf.write(o)
+            o.close()
+            print(f'Dim = {thisContent}')
+            return f'设置匹配模式成功！'
+        if newContent == wordList :
+            return '匹配模式未改变！'
+    conf.clear
+    conf.read(dim_absolute_path,encoding='utf-8')  
+    if  not  conf.has_option(groupId, targetWord) :
+        conf.set(groupId,targetWord,newContent)
+        thisContent= conf.get(groupId, targetWord)
+        o=open(dim_absolute_path, "w",encoding='utf-8') 
+        conf.write(o)
+        o.close()
+        return f'设置匹配模式成功！'
 
 
 
@@ -120,30 +216,92 @@ saveWord = on_startswith(['添加词条%'],priority=50)# 创建消息关键词�
 @saveWord.handle()
 async def saveWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
     thisMsgStr=str(event.get_message())
+    thisGroupId = event.get_session_id().split("_")[1] 
     #thisMsgStr=event.get_message().extract_plain_text()
     thisMsgStr=thisMsgStr[5:]
     thisWholeContent=str(thisMsgStr).split('%')
     thisWord=thisWholeContent[0]
+    if thisWord == '':
+        await saveWord.finish(Message(f'添加词条名称为空，请检查！'))
     thisContent=thisWholeContent[1]
-    thisWord=(thisWord).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace(':','$mh;')#.replace('CQ','cq')#.replace('cq:','cq = ')
-    #thisContent=repr(thisContent)
-    thisGroupId = event.get_session_id().split("_")[1]       
-    #await saveWord.send(Message(f'添加的文本是 {thisWord}')) 
-    #await saveWord.send(Message(f'添加的内容是 {thisContent}')) 
-    await saveWord.finish(Message(f'{cqAt(event.get_user_id())}{AddWord(thisGroupId,thisWord,thisContent)}'))
+    if thisContent == '':
+        await saveWord.finish(Message(f'添加词条内容为空，请检查！'))
+    passport1=1
+    passport2=1
+    for ch in thisWord:
+        if not ch ==' ':
+            passport1=1
+            break
+    for ch in thisContent:
+        if not ch ==' ':
+            passport2=1
+            break
+    # if thisWord[0]==' ':
+    #     await saveWord.finish(Message(f'词条名称不允许以空格开头！'))
+    # if passport1 == 0 or passport2 == 0:
+    #     await saveWord.finish(Message(f'词条名称或词条内容不允许全为空格！'))
+    if passport1 == 1 and passport2 == 1:
+        isDim='0' 
+        if len(thisWholeContent) > 2 :
+            isDim=thisWholeContent[2]
+            if isDim=='模糊':
+                isDim='1'
+            if isDim=='全文':
+                isDim='0'   
+            if not isDim == '模糊':
+                if not isDim == '全文':
+                    isDim='0' 
+        thisWord=(thisWord).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace(':','$mh;').replace(' ','$blank;')#.replace('cq:','cq = ')
+        #thisContent=repr(thisContent)
+        #thisGroupId = event.get_session_id().split("_")[1]       
+        #await saveWord.send(Message(f'添加的文本是 {thisWord}')) 
+        #await saveWord.send(Message(f'添加的内容是 {thisContent}')) 
+        #await saveWord.send(Message(
+        SetDim(thisGroupId,thisWord,isDim)#))
+        await saveWord.finish(Message(f'{cqAt(event.get_user_id())}{AddWord(thisGroupId,thisWord,thisContent)}'))
 
-readWord = on_startswith(['查看词条%'],priority=50)# 创建消息关键词匹配事件响应器
+
+setWord = on_startswith(['设置词条%'],priority=50)# 创建消息关键词匹配事件响应器
+@setWord.handle()
+async def setWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
+    thisMsgStr=str(event.get_message())
+    #thisMsgStr=event.get_message().extract_plain_text()
+    thisMsgStr=thisMsgStr[5:]
+    thisWholeContent=str(thisMsgStr).split('%')
+    thisWord=thisWholeContent[0]
+    isDim=thisWholeContent[1]
+    thisGroupId = event.get_session_id().split("_")[1] 
+    if isDim=='模糊':
+        isDim='1'
+    if isDim=='全文':
+        isDim='0'   
+    await setWord.finish(Message(f'{cqAt(event.get_user_id())}{SetDim(thisGroupId,thisWord,isDim)}'))
+
+readWord = on_startswith(['查看词条%'],priority=50,block=True)# 创建消息关键词匹配事件响应器
 @readWord.handle()
 async def readWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
     thisMsgStr=str(event.get_message())
     #thisMsgStr=event.get_message().extract_plain_text()
     thisMsgStr=thisMsgStr[5:]
     thisWholeContent=str(thisMsgStr).split('%')
-    thisWord=(thisWholeContent[0]).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace('CQ','cq').replace(':','$mh;')#.replace('cq:','cq = ')
+    thisWord=(thisWholeContent[0]).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace('[CQ','[cq').replace(':','$mh;').replace(' ','$blank;')#.replace('cq:','cq = ')
     #thisContent=thisWholeContent[1]
     thisGroupId = event.get_session_id().split("_")[1]       
     #await readWord.send(f'正在查询词条{thisWord}...')
-    await readWord.finish(Message(GetWord(thisGroupId,thisWord)))
+    await readWord.finish(Message(f'词条查询结果为:{GetWord(thisGroupId,thisWord)}'))
+
+#================================================================================
+readAllWord = on_startswith(['查看本群词条'],priority=50)# 创建消息关键词匹配事件响应器
+@readAllWord.handle()
+async def readAllWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
+    thisGroupId = event.get_session_id().split("_")[1]     
+    wordList=GetAllWord(thisGroupId)#.replace('$91;','[').replace('$93;',']').replace('$eql;','=').replace('$mh;',':')
+    wordStr=f'本群({thisGroupId})词条列表：'
+    for word in wordList:
+        wordStr=wordStr+'\n'+word
+    wordStr=wordStr.replace('$91;','[').replace('$93;',']').replace('$eql;','=').replace('$mh;',':').replace('cq','CQ').replace('$blank;',' ')
+    await readAllWord.finish(Message(wordStr))
+#================================================================================
 
 delWord = on_startswith(['删除词条%'],priority=50)# 创建消息关键词匹配事件响应器
 @delWord.handle()
@@ -152,10 +310,26 @@ async def delWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
     #thisMsgStr=event.get_message().extract_plain_text()
     thisMsgStr=thisMsgStr[5:]
     thisWholeContent=str(thisMsgStr).split('%')
-    thisWord=(thisWholeContent[0]).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace('CQ','cq').replace(':','$mh;')#.replace('cq:','cq = ')
+    thisWord=(thisWholeContent[0]).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace('CQ','cq').replace(':','$mh;').replace(' ','$blank;')#.replace('cq:','cq = ')
     #thisContent=thisWholeContent[1]
     thisGroupId = event.get_session_id().split("_")[1]       
     await delWord.finish(Message(DelWord(thisGroupId,thisWord)))
+
+cutWord = on_startswith(['删减词条%'],priority=50)# 创建消息关键词匹配事件响应器
+@cutWord.handle()
+async def cutWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
+    thisMsgStr=str(event.get_message())
+    thisGroupId = event.get_session_id().split("_")[1] 
+    #thisMsgStr=event.get_message().extract_plain_text()
+    thisMsgStr=thisMsgStr[5:]
+    thisWholeContent=str(thisMsgStr).split('%')
+    thisWord=(thisWholeContent[0]).replace('[','$91;').replace(']','$93;').replace('=','$eql;').replace('CQ','cq').replace(':','$mh;').replace(' ','$blank;')#.replace('cq:','cq = ')
+    if thisWord == '':
+        await cutWord.finish(Message(f'删减词条名称为空，请检查！'))
+    thisContent=thisWholeContent[1]
+    if thisContent == '':
+        await cutWord.finish(Message(f'删减词条内容为空，请检查！'))
+    await cutWord.finish(Message(f'{CutWord(thisGroupId,thisWord,thisContent)}'))
 
 #root_dir=os.path.dirname(os.path.pardir('.')) 
 
@@ -163,23 +337,36 @@ readRanWord = on_message(priority=51,block=False)# 创建消息关键词匹配�
 @readRanWord.handle()
 async def readRanWord_handle(bot: Bot, event: GroupMessageEvent):#异步定义
     thisMsgStr=str(event.get_message())
+    thisGroupId = event.get_session_id().split("_")[1]    
     #eventContent=str(event)
     #await saveWord.send(Message(f'event是 {eventContent}'))  
     #thisMsgStr=event.get_message().extract_plain_text()
     #thisWholeContent=str(thisMsgStr).split('#')
-    thisWord=(thisMsgStr).replace('[','$91;').replace(']','$93;').replace('CQ','cq').replace('=','$eql;').replace(':','$mh;')#.replace('cq:','cq = ')
-    #thisWholeContent[0]
-    #thisContent=thisWholeContent[1]
-    thisGroupId = event.get_session_id().split("_")[1]    
-    ranRes=GetRanWord(thisGroupId,thisWord)
-    if ranRes is  None :
-        return
-    else:
-        ranRes=ranRes#.replace('$91;','[').replace('$93;',']').replace('=','$eql;').replace(':','$mh;')
-    if not ranRes is None:
-        await readRanWord.finish(Message(ranRes))
-    else:
-        return
+    thisWord=(thisMsgStr).replace('[','$91;').replace(']','$93;').replace('CQ','cq').replace('=','$eql;').replace(':','$mh;').replace(' ','$blank;')#.replace('cq:','cq = ')
+    wordList=ReturnStrList(thisWord)
+    print(wordList)
+    for sonWord in wordList:
+        #thisWholeContent[0]
+        #thisContent=thisWholeContent[1]
+        isDim='0'
+        isDim=GetIsDim(thisGroupId,sonWord)
+        print(f'DIM {isDim}')
+        print(f'')
+        if isDim=='0':
+            ranRes=GetRanWord(thisGroupId,thisWord)
+            if ranRes is  None :
+                return
+            else:
+                ranRes=ranRes#.replace('$91;','[').replace('$93;',']').replace('=','$eql;').replace(':','$mh;')
+            if not ranRes is None:
+                await readRanWord.send(Message(ranRes))
+            else:
+                return
+        if isDim=='1':
+            #await readRanWord.send(Message(DimWord(thisGroupId,thisMsgStr)))
+            resWord=DimWord(thisGroupId,sonWord)
+            if not resWord == None:
+                await readRanWord.finish(Message(resWord))
 
 # msgTest=on_message(priority=50,block=False)
 # @msgTest.handle()
